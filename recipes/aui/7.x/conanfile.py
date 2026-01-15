@@ -42,7 +42,7 @@ class AUIRecipe(ConanFile):
         self.requires("glm/0.9.9.8")
         self.requires("openssl/3.2.1")
         self.requires("libcurl/8.6.0")
-        self.requires("lunasvg/2.3.2")
+        self.requires("lunasvg/3.0.0")
         self.requires("libwebp/1.3.2")
         self.requires("freetype/2.13.2")
         self.requires("opus/1.4")
@@ -53,13 +53,12 @@ class AUIRecipe(ConanFile):
         if self.settings.os == "Linux":
             self.requires("libbacktrace/cci.20240730")
             self.requires("pulseaudio/14.2")
-            self.requires("libx11/1.8.7")
             self.requires("fontconfig/2.15.0")
-            self.requires("dbus/1.13.18")
-            self.requires("gtk/3.24.24")
+            self.requires("dbus/1.15.8")
+            self.requires("gtk/system") #self.requires("gtk/3.24.24")
 
         if self.settings.os == "Android":
-            self.requires("oboe/1.8.0")
+            self.requires("oboe/1.10.0")
 
         if self.settings.os in ["Windows", "Linux", "Macos"]:
             self.requires("glew/2.2.0")
@@ -203,7 +202,7 @@ class AUIRecipe(ConanFile):
 
         if self.settings.os == "Linux":
             self.cpp_info.components["aui_views"].requires.extend(
-                ["libx11::libx11", "dbus::dbus", "fontconfig::fontconfig", "gtk::gtk"]
+                ["fontconfig::fontconfig", "gtk::gtk"]
             )
         elif self.settings.os == "Windows":
             self.cpp_info.components["aui_views"].system_libs = [
