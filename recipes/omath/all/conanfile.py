@@ -92,7 +92,8 @@ class OmathConan(ConanFile):
         cmake = CMake(self)
         cmake.install()
 
-        rmdir(self, os.path.join(self.package_folder, "lib", "cmake"))
+        if not self.options.get_safe("enable_modules"):
+            rmdir(self, os.path.join(self.package_folder, "lib", "cmake"))
 
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "omath")
