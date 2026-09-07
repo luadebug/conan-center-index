@@ -3,6 +3,7 @@ from conan.tools.build import check_min_cppstd
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 from conan.tools.files import copy, get, rmdir
 from conan.tools.microsoft import is_msvc
+from conan.tools.scm import Version
 from conan.errors import ConanInvalidConfiguration
 import os
 
@@ -22,12 +23,27 @@ class OmathConan(ConanFile):
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
+        "with_lua": [True, False],
+        "enable_modules": [True, False],
     }
     default_options = {
         "shared": False,
         "fPIC": True,
+        "with_lua": False,
+        "enable_modules": False,
     }
     implements = ["auto_shared_fpic"]
+
+    def config_options(self):
+        if Version(self.version) < "5.1.0":
+            del self.options.with_lua
+        if Version(self.version) < "5.4.0":
+            del self.options.enable_modules
+
+    def requirements(self):
+        if self.options.get_safe("with_lua"):
+            self.requires("sol2/3.5.0")
+            self.requires("lua/5.4.6")
 
 
     def layout(self):
@@ -44,6 +60,12 @@ class OmathConan(ConanFile):
 
     def generate(self):
         tc = CMakeToolchain(self)
+        if Version(self.version) >= "5.1.0":
+            tc.cache_variables["OMATH_ENABLE_LUA"] = self.options.with_lua
+        if Version(self.version) >= "5.4.0":
+            tc.cache_variables["OMATH_ENABLE_MODULES"] = self.options.enable_modules
+        if self.options.get_safe("with_lua"):
+            tc.cache_variables["SOL2_INCLUDE_DIRS"] = self.dependencies["sol2"].cpp_info.includedirs[0]
         tc.cache_variables["OMATH_USE_UNITY_BUILD"] = False
         tc.cache_variables["OMATH_BUILD_TESTS"] = False
         tc.cache_variables["OMATH_THREAT_WARNING_AS_ERROR"] = False
@@ -54,6 +76,10 @@ class OmathConan(ConanFile):
         tc.generate()
         
         deps = CMakeDeps(self)
+        if self.options.get_safe("with_lua"):
+            deps.set_property("lua", "cmake_file_name", "Lua")
+            deps.set_property("lua", "cmake_find_mode", "both")
+            deps.set_property("lua", "cmake_additional_variables_prefixes", ["LUA"])
         deps.generate()
 
     def build(self):
@@ -72,4 +98,7 @@ class OmathConan(ConanFile):
         self.cpp_info.set_property("cmake_file_name", "omath")
         self.cpp_info.set_property("cmake_target_name", "omath::omath")
         self.cpp_info.defines.extend(["OMATH_SUPRESS_SAFETY_CHECKS", "OMATH_ENABLE_FORCE_INLINE", "OMATH_ENABLE_LEGACY"])
+        if self.options.get_safe("with_lua"):
+            self.cpp_info.defines.append("OMATH_ENABLE_LUA")
+            self.cpp_info.requires.extend(["lua::lua", "sol2::sol2"])
         self.cpp_info.libs = ["omath"]
